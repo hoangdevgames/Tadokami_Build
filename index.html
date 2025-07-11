@@ -297,7 +297,7 @@
                 if (unityInstance.Module && 
                     unityInstance.Module.SendMessage) {
                         
-                    unityInstance.SendMessage("__[ST]_WebGLBridge", "OnWindowResize", 
+                    unityInstance.SendMessage("__[ST]_ApiManager", "OnWindowResize", 
                         JSON.stringify({
                             width: canvas.width, 
                             height: canvas.height,
@@ -424,16 +424,16 @@
                     console.log("Attempting to send token after delay");
                     try {
                         // Test connection first
-                        instance.SendMessage("__[ST]_WebGLBridge", "TestConnection");
+                        instance.SendMessage("__[ST]_ApiManager", "TestConnection");
                         console.log("Test connection successful");
                         
                         // Get and send token
                         const token = getLoginToken();
                         if (token) {
-                            instance.SendMessage("__[ST]_WebGLBridge", "OnLoginTokenReceived", token);
+                            instance.SendMessage("__[ST]_ApiManager", "OnLoginTokenReceived", token);
                             console.log("Token sent to Unity:", token);
                         } else {
-                            instance.SendMessage("__[ST]_WebGLBridge", "OnLoginTokenReceived", "");
+                            instance.SendMessage("__[ST]_ApiManager", "OnLoginTokenReceived", "");
                             console.log("No token found in URL, sending default");
                         }
                     } catch (error) {
@@ -445,16 +445,16 @@
                     console.log("Attempting to send token after delay");
                     try {
                         // Test connection first
-                        instance.SendMessage("__[ST]_WebGLBridge", "TestConnection");
+                        instance.SendMessage("__[ST]_ApiManager", "TestConnection");
                         console.log("Test connection successful");
                         
                         // Get and send token
                         const token = getLoginToken();
                         if (token) {
-                            instance.SendMessage("__[ST]_WebGLBridge", "OnLoginTokenReceived", token);
+                            instance.SendMessage("__[ST]_ApiManager", "OnLoginTokenReceived", token);
                             console.log("Token sent to Unity:", token);
                         } else {
-                            instance.SendMessage("__[ST]_WebGLBridge", "OnLoginTokenReceived", "");
+                            instance.SendMessage("__[ST]_ApiManager", "OnLoginTokenReceived", "");
                             console.log("No token found in URL, sending default");
                         }
                     } catch (error) {
@@ -490,7 +490,7 @@
                     console.log('Kaia Invite Code:', inviteCode);
                     // Send invite code to Unity
                     if (unityInstance && unityInstance.SendMessage) {
-                        unityInstance.SendMessage("__[ST]_WebGLBridge", "OnLineInviteCodeReceived", inviteCode);
+                        unityInstance.SendMessage("__[ST]_ApiManager", "OnLineInviteCodeReceived", inviteCode);
                     }
                 }
                 else if(param.startsWith('fslid_')) {
@@ -498,7 +498,7 @@
                     console.log('Kaia FSL Binding Code:', fslBindingCode);
                     // Send FSL binding code to Unity
                     if (unityInstance && unityInstance.SendMessage) {
-                        unityInstance.SendMessage("__[ST]_WebGLBridge", "OnLineFSLBindingCodeReceived", fslBindingCode);
+                        unityInstance.SendMessage("__[ST]_ApiManager", "OnLineFSLBindingCodeReceived", fslBindingCode);
                     }
                 }
             }
