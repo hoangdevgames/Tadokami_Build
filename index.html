@@ -142,17 +142,17 @@
             
             console.log("User is logged in");
             
+            // Store data for later use when Unity is ready
+            window.kaiaData = {
+                profile: null,
+                token: null
+            };
+            
             // Get user profile and token
             try {
                 const profile = await liff.getProfile();
                 console.log("Kaia User Profile:", profile);
-                
-                // Send profile to Unity when ready
-                if (unityInstance && unityInstance.SendMessage) {
-                    const profileStr = JSON.stringify(profile);
-                    unityInstance.SendMessage("__[ST]_ApiManager", "OnLineUserProfileReceived", profileStr);
-                    console.log("Profile sent to ApiManager");
-                }
+                window.kaiaData.profile = profile;
             } catch (error) {
                 console.error('Error getting Kaia profile:', error);
             }
@@ -161,18 +161,39 @@
             try {
                 const token = liff.getIDToken();
                 console.log("Kaia ID Token:", token);
-                
-                // Send token to Unity when ready
-                if (unityInstance && unityInstance.SendMessage) {
-                    unityInstance.SendMessage("__[ST]_ApiManager", "OnLineLoginTokenReceived", token);
-                    console.log("Token sent to ApiManager");
-                }
+                window.kaiaData.token = token;
             } catch (error) {
                 console.error('Error getting Kaia ID token:', error);
             }
             
         } catch (error) {
             console.error('Kaia LIFF initialization failed:', error);
+        }
+    }
+
+    // Function to send data to Unity when it's ready
+    function sendKaiaDataToUnity() {
+        console.log("=== sendKaiaDataToUnity called ===");
+        
+        if (!unityInstance || !unityInstance.SendMessage) {
+            console.log("Unity not ready yet, retrying in 1 second...");
+            setTimeout(sendKaiaDataToUnity, 1000);
+            return;
+        }
+        
+        console.log("Unity is ready, sending Kaia data...");
+        
+        // Send profile if available
+        if (window.kaiaData && window.kaiaData.profile) {
+            const profileStr = JSON.stringify(window.kaiaData.profile);
+            unityInstance.SendMessage("__[ST]_ApiManager", "OnLineUserProfileReceived", profileStr);
+            console.log("Profile sent to ApiManager");
+        }
+        
+        // Send token if available
+        if (window.kaiaData && window.kaiaData.token) {
+            unityInstance.SendMessage("__[ST]_ApiManager", "OnLineLoginTokenReceived", window.kaiaData.token);
+            console.log("Token sent to ApiManager");
         }
     }
 
@@ -419,42 +440,27 @@
                 // Mark Unity as loaded
                 isUnityLoaded = true;
                 
+                // Send Kaia data to Unity when ready
+                setTimeout(() => {
+                    console.log("Attempting to send Kaia data to Unity");
+                    sendKaiaDataToUnity();
+                }, 2000);
+
                 // Wait for scene to load and send token
                 setTimeout(() => {
                     console.log("Attempting to send token after delay");
                     try {
                         // Test connection first
-                        instance.SendMessage("__[ST]_ApiManager", "TestConnection");
+                        instance.SendMessage("__[ST]_WebGLBridge", "TestConnection");
                         console.log("Test connection successful");
                         
                         // Get and send token
                         const token = getLoginToken();
                         if (token) {
-                            instance.SendMessage("__[ST]_ApiManager", "OnLoginTokenReceived", token);
+                            instance.SendMessage("__[ST]_WebGLBridge", "OnLoginTokenReceived", token);
                             console.log("Token sent to Unity:", token);
                         } else {
-                            instance.SendMessage("__[ST]_ApiManager", "OnLoginTokenReceived", "");
-                            console.log("No token found in URL, sending default");
-                        }
-                    } catch (error) {
-                        console.error("Error sending message to Unity:", error);
-                    }
-                }, 2000);
-
-                setTimeout(() => {
-                    console.log("Attempting to send token after delay");
-                    try {
-                        // Test connection first
-                        instance.SendMessage("__[ST]_ApiManager", "TestConnection");
-                        console.log("Test connection successful");
-                        
-                        // Get and send token
-                        const token = getLoginToken();
-                        if (token) {
-                            instance.SendMessage("__[ST]_ApiManager", "OnLoginTokenReceived", token);
-                            console.log("Token sent to Unity:", token);
-                        } else {
-                            instance.SendMessage("__[ST]_ApiManager", "OnLoginTokenReceived", "");
+                            instance.SendMessage("__[ST]_WebGLBridge", "OnLoginTokenReceived", "");
                             console.log("No token found in URL, sending default");
                         }
                     } catch (error) {
