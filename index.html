@@ -6,7 +6,6 @@
     <title>Unity Web Player | AutoRPGAdventure</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-app-compat.js"></script>
     <!-- <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore-compat.js"></script> -->
     <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics-compat.js"></script>
@@ -110,6 +109,8 @@
     var canvas = document.querySelector("#unity-canvas");
     var unityInstance = null;
     var isUnityLoaded = false;
+    var liff = null;
+    var isLiffInitialized = false;
 
     // Initialize Firebase
     const firebaseConfig = {
@@ -131,23 +132,63 @@
     // const auth = firebaseApp.auth();
     // const storage = firebaseApp.storage();
     
-    // LINE LIFF SDK Initialization
+    // LINE LIFF SDK Initialization - Using dynamic import like GamingHub
     async function initializeSDK() {
         try {
-            await liff.init({ liffId: "2007488220-br6BV2x6" });
-            console.log("LIFF SDK initialized successfully");
+            // Dynamic import of LIFF SDK
+            const liffModule = await import('https://static.line-scdn.net/liff/edge/2/sdk.js');
+            liff = liffModule.default;
             
+            console.log("LIFF SDK loaded successfully");
+            
+            // Initialize LIFF with proper configuration
+            await liff.init({ 
+                liffId: "2007488220-br6BV2x6",
+                withLoginOnExternalBrowser: true
+            });
+            
+            console.log("LIFF SDK initialized successfully");
+            isLiffInitialized = true;
+            
+            // Check if user is logged in
             if (!liff.isLoggedIn()) {
                 console.log("User not logged in, redirecting to login");
                 liff.login();
-            } else {
-                console.log("User is logged in");
-                // Get user profile if needed
-                const profile = await liff.getProfile();
-                console.log("User profile:", profile);
+                return;
             }
+            
+            console.log("User is logged in");
+            
+            // Get user profile
+            const profile = await liff.getProfile();
+            console.log("User profile:", profile);
+            
+            // Get ID token for authentication
+            const idToken = await liff.getIDToken();
+            console.log("ID Token received");
+            
+            // Get URL parameters for Line
+            const urlParams = new URLSearchParams(window.location.search);
+            const startParam = urlParams.get('startParam');
+            if (startParam) {
+                console.log('Start parameter:', startParam);
+                const paramsArray = startParam.split('__');
+                for (const param of paramsArray) {
+                    if (param.startsWith('invite_')) {
+                        const inviteCode = param.split('_')[1];
+                        console.log('Invite Code:', inviteCode);
+                    }
+                    else if(param.startsWith('fslid_')) {
+                        const fslBindingCode = param.split('_')[1];
+                        console.log('FSL Binding Code:', fslBindingCode);
+                    }
+                }
+            }
+            
         } catch (error) {
             console.error("Error initializing LIFF SDK:", error);
+            // Fallback: try to continue without LIFF
+            console.log("Continuing without LIFF initialization");
         }
     }
     
@@ -429,13 +470,21 @@
         console.log("Full query string:", queryString);
         
         // Get LIFF access token if available
-        if (liff && liff.isLoggedIn()) {
+        if (liff && isLiffInitialized && liff.isLoggedIn()) {
             try {
-                const accessToken = liff.getAccessToken();
-                console.log("LIFF access token available");
-                return accessToken;
+                // Try to get ID token first (more secure)
+                liff.getIDToken().then(idToken => {
+                    console.log("LIFF ID token available");
+                    return idToken;
+                }).catch(error => {
+                    console.error("Error getting LIFF ID token:", error);
+                    // Fallback to access token
+                    const accessToken = liff.getAccessToken();
+                    console.log("LIFF access token available");
+                    return accessToken;
+                });
             } catch (error) {
-                console.error("Error getting LIFF access token:", error);
+                console.error("Error getting LIFF token:", error);
             }
         }
         
@@ -572,7 +621,7 @@
         
         if (isIOS) {
             // Ensure LIFF is ready on iOS
-            if (liff && liff.isLoggedIn()) {
+            if (liff && isLiffInitialized && liff.isLoggedIn()) {
                 console.log("LIFF is ready on iOS");
             }
         }
