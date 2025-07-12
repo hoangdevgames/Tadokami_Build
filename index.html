@@ -390,15 +390,12 @@
         console.log("=== LOADING GAME ===", version);
         var buildUrl = "Build";
         
-        // Test direct URLs without cache busting first
-        console.log("=== TESTING DIRECT URLS ===");
-        
-        // Test URLs without cache busting
+        // CORRECTED: Use the correct file names
         const testUrls = [
-            buildUrl + "/Tadogami_Build.loader.js",
-            buildUrl + "/Tadogami_Build.data",
-            buildUrl + "/Tadogami_Build.framework.js",
-            buildUrl + "/Tadogami_Build.wasm"
+            buildUrl + "/Tadokami_Build.loader.js",  // FIXED: Tadokami not Tadogami
+            buildUrl + "/Tadokami_Build.data",       // FIXED: Tadokami not Tadogami
+            buildUrl + "/Tadokami_Build.framework.js", // FIXED: Tadokami not Tadogami
+            buildUrl + "/Tadokami_Build.wasm"        // FIXED: Tadokami not Tadogami
         ];
         
         console.log("Testing URLs:", testUrls);
@@ -429,6 +426,8 @@
                 document.querySelector("#unity-warning").innerHTML = 
                     '<div style="background: red; padding: 10px; color: white;">' +
                     'Unity build files not found. Please check GitHub Pages deployment.' +
+                    '<br><br>Missing files:<br>' +
+                    results.filter(r => !r.exists).map(r => r.url).join('<br>') +
                     '</div>';
             }
         });
@@ -446,11 +445,12 @@
         // Force browser to reload all Unity files with unique parameters
         const forceReload = `&force=${Date.now()}&unique=${Math.random().toString(36).substring(2, 15)}`;
         
-        var loaderUrl = buildUrl + "/Tadogami_Build.loader.js?" + cacheBuster + forceReload;
+        // CORRECTED: Use the correct file names
+        var loaderUrl = buildUrl + "/Tadokami_Build.loader.js?" + cacheBuster + forceReload;  // FIXED
         var config = {
-            dataUrl: buildUrl + "/Tadogami_Build.data?" + cacheBuster + forceReload,
-            frameworkUrl: buildUrl + "/Tadogami_Build.framework.js?" + cacheBuster + forceReload,
-            codeUrl: buildUrl + "/Tadogami_Build.wasm?" + cacheBuster + forceReload,
+            dataUrl: buildUrl + "/Tadokami_Build.data?" + cacheBuster + forceReload,           // FIXED
+            frameworkUrl: buildUrl + "/Tadokami_Build.framework.js?" + cacheBuster + forceReload, // FIXED
+            codeUrl: buildUrl + "/Tadokami_Build.wasm?" + cacheBuster + forceReload,           // FIXED
             streamingAssetsUrl: "StreamingAssets",
             companyName: "DefaultCompany",
             productName: "AutoRPGAdventure",
