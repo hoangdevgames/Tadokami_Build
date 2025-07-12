@@ -390,6 +390,53 @@
         console.log("=== LOADING GAME ===", version);
         var buildUrl = "Build";
         
+        // Test direct URLs without cache busting first
+        console.log("=== TESTING DIRECT URLS ===");
+        
+        // Test URLs without cache busting
+        const testUrls = [
+            buildUrl + "/Tadogami_Build.loader.js",
+            buildUrl + "/Tadogami_Build.data",
+            buildUrl + "/Tadogami_Build.framework.js",
+            buildUrl + "/Tadogami_Build.wasm"
+        ];
+        
+        console.log("Testing URLs:", testUrls);
+        
+        // Test each URL individually
+        Promise.all(testUrls.map(url => 
+            fetch(url, { method: 'HEAD' })
+                .then(response => ({ url, exists: response.ok }))
+                .catch(error => ({ url, exists: false, error }))
+        ))
+        .then(results => {
+            console.log("=== URL TEST RESULTS ===");
+            results.forEach(result => {
+                console.log(`${result.url}: ${result.exists ? 'EXISTS' : 'NOT FOUND'}`);
+                if (result.error) {
+                    console.error(`Error for ${result.url}:`, result.error);
+                }
+            });
+            
+            // If all files exist, proceed with normal loading
+            const allExist = results.every(r => r.exists);
+            if (allExist) {
+                console.log("All files exist, loading Unity...");
+                loadUnityWithCacheBusting(version);
+            } else {
+                console.error("Some files are missing, cannot load Unity");
+                // Show error message to user
+                document.querySelector("#unity-warning").innerHTML = 
+                    '<div style="background: red; padding: 10px; color: white;">' +
+                    'Unity build files not found. Please check GitHub Pages deployment.' +
+                    '</div>';
+            }
+        });
+    }
+    
+    function loadUnityWithCacheBusting(version) {
+        var buildUrl = "Build";
+        
         // Enhanced cache busting with multiple parameters
         const timestamp = Date.now();
         const random = Math.random();
@@ -399,7 +446,6 @@
         // Force browser to reload all Unity files with unique parameters
         const forceReload = `&force=${Date.now()}&unique=${Math.random().toString(36).substring(2, 15)}`;
         
-        // CORRECTED: Use the exact file names from your build structure
         var loaderUrl = buildUrl + "/Tadogami_Build.loader.js?" + cacheBuster + forceReload;
         var config = {
             dataUrl: buildUrl + "/Tadogami_Build.data?" + cacheBuster + forceReload,
@@ -412,52 +458,13 @@
             showBanner: unityShowBanner,
         };
 
-        console.log("=== BUILD FILES CHECK ===");
-        console.log("Build URL:", buildUrl);
+        console.log("=== LOADING UNITY WITH CACHE BUSTING ===");
         console.log("Loader URL:", loaderUrl);
         console.log("Data URL:", config.dataUrl);
         console.log("Framework URL:", config.frameworkUrl);
         console.log("Code URL:", config.codeUrl);
 
-        // Test if files exist before loading
-        Promise.all([
-            fetch(config.dataUrl, { method: 'HEAD' }),
-            fetch(config.frameworkUrl, { method: 'HEAD' }),
-            fetch(config.codeUrl, { method: 'HEAD' })
-        ])
-        .then(responses => {
-            const [dataResponse, frameworkResponse, codeResponse] = responses;
-            console.log("File existence check:");
-            console.log("- Data file:", dataResponse.ok);
-            console.log("- Framework file:", frameworkResponse.ok);
-            console.log("- Code file:", codeResponse.ok);
-            
-            if (dataResponse.ok && frameworkResponse.ok && codeResponse.ok) {
-                console.log("All build files exist, loading Unity...");
-                loadUnity(loaderUrl, canvas, config);
-            } else {
-                throw new Error("Some build files are missing");
-            }
-        })
-        .catch(error => {
-            console.error("Build files error:", error);
-            console.log("Please check GitHub Pages deployment and file paths");
-            
-            // Fallback: try without cache busting
-            console.log("Trying fallback without cache busting...");
-            var fallbackLoaderUrl = buildUrl + "/Tadogami_Build.loader.js";
-            var fallbackConfig = {
-                dataUrl: buildUrl + "/Tadogami_Build.data",
-                frameworkUrl: buildUrl + "/Tadogami_Build.framework.js",
-                codeUrl: buildUrl + "/Tadogami_Build.wasm",
-                streamingAssetsUrl: "StreamingAssets",
-                companyName: "DefaultCompany",
-                productName: "AutoRPGAdventure",
-                productVersion: version,
-                showBanner: unityShowBanner,
-            };
-            loadUnity(fallbackLoaderUrl, canvas, fallbackConfig);
-        });
+        loadUnity(loaderUrl, canvas, config);
     }
 
     // Set canvas size to match window dimensions
