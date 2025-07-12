@@ -110,6 +110,7 @@
     var unityInstance = null;
     var isUnityLoaded = false;
     var isLiffInitialized = false;
+    var liffToken = null; // Store token for Unity
 
     // Initialize Firebase
     const firebaseConfig = {
@@ -201,9 +202,20 @@
             const profile = await liff.getProfile();
             console.log("User profile:", profile);
             
-            // Get ID token for authentication
-            const idToken = await liff.getIDToken();
-            console.log("ID Token received");
+            // Get ID token for authentication - store it for Unity
+            try {
+                liffToken = await liff.getIDToken();
+                console.log("ID Token received and stored");
+            } catch (error) {
+                console.error("Error getting ID token:", error);
+                // Fallback to access token
+                try {
+                    liffToken = liff.getAccessToken();
+                    console.log("Access token received and stored");
+                } catch (accessError) {
+                    console.error("Error getting access token:", accessError);
+                }
+            }
             
             // Get URL parameters for Line
             const urlParams = new URLSearchParams(window.location.search);
@@ -502,33 +514,25 @@
         document.body.appendChild(script);
     }
 
+    // Synchronous function for Unity to get token
     function getLoginToken() {
         console.log("Current URL:", window.location.href);
         const queryString = window.location.search.substring(1);
         console.log("Full query string:", queryString);
         
-        // Get LIFF access token if available
-        if (typeof liff !== 'undefined' && isLiffInitialized && liff.isLoggedIn()) {
-            try {
-                // Try to get ID token first (more secure)
-                return liff.getIDToken().then(idToken => {
-                    console.log("LIFF ID token available");
-                    return idToken;
-                }).catch(error => {
-                    console.error("Error getting LIFF ID token:", error);
-                    // Fallback to access token
-                    const accessToken = liff.getAccessToken();
-                    console.log("LIFF access token available");
-                    return accessToken;
-                });
-            } catch (error) {
-                console.error("Error getting LIFF token:", error);
-            }
+        // Return stored LIFF token if available
+        if (liffToken) {
+            console.log("Returning stored LIFF token");
+            return liffToken;
         }
         
+        // Return URL query string as fallback
         if (queryString) {
+            console.log("Returning URL query string as token");
             return queryString;
         }
+        
+        console.log("No token available");
         return null;
     }
 
