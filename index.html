@@ -389,11 +389,22 @@
     function loadGame(version) {
         console.log("=== LOADING GAME ===", version);
         var buildUrl = "Build";
-        var loaderUrl = buildUrl + "/Tadogami_Build.loader.js";
+        
+        // Enhanced cache busting with multiple parameters
+        const timestamp = Date.now();
+        const random = Math.random();
+        const sessionId = Math.random().toString(36).substring(2, 15);
+        const cacheBuster = `t=${timestamp}&r=${random}&s=${sessionId}&v=${version}`;
+        
+        // Force browser to reload all Unity files with unique parameters
+        const forceReload = `&force=${Date.now()}&unique=${Math.random().toString(36).substring(2, 15)}`;
+        
+        // CORRECTED: Use the exact file names from your build structure
+        var loaderUrl = buildUrl + "/Tadogami_Build.loader.js?" + cacheBuster + forceReload;
         var config = {
-            dataUrl: buildUrl + "/Tadogami_Build.data?v=" + version,
-            frameworkUrl: buildUrl + "/Tadogami_Build.framework.js?v=" + version,
-            codeUrl: buildUrl + "/Tadogami_Build.wasm?v=" + version,
+            dataUrl: buildUrl + "/Tadogami_Build.data?" + cacheBuster + forceReload,
+            frameworkUrl: buildUrl + "/Tadogami_Build.framework.js?" + cacheBuster + forceReload,
+            codeUrl: buildUrl + "/Tadogami_Build.wasm?" + cacheBuster + forceReload,
             streamingAssetsUrl: "StreamingAssets",
             companyName: "DefaultCompany",
             productName: "AutoRPGAdventure",
@@ -401,14 +412,52 @@
             showBanner: unityShowBanner,
         };
 
-        // Ensure version display is visible before loading Unity
-        var versionDisplay = document.getElementById('version-display');
-        if (versionDisplay) {
-            versionDisplay.style.display = 'block';
-            versionDisplay.style.visibility = 'visible';
-        }
+        console.log("=== BUILD FILES CHECK ===");
+        console.log("Build URL:", buildUrl);
+        console.log("Loader URL:", loaderUrl);
+        console.log("Data URL:", config.dataUrl);
+        console.log("Framework URL:", config.frameworkUrl);
+        console.log("Code URL:", config.codeUrl);
 
-        loadUnity(loaderUrl, canvas, config);
+        // Test if files exist before loading
+        Promise.all([
+            fetch(config.dataUrl, { method: 'HEAD' }),
+            fetch(config.frameworkUrl, { method: 'HEAD' }),
+            fetch(config.codeUrl, { method: 'HEAD' })
+        ])
+        .then(responses => {
+            const [dataResponse, frameworkResponse, codeResponse] = responses;
+            console.log("File existence check:");
+            console.log("- Data file:", dataResponse.ok);
+            console.log("- Framework file:", frameworkResponse.ok);
+            console.log("- Code file:", codeResponse.ok);
+            
+            if (dataResponse.ok && frameworkResponse.ok && codeResponse.ok) {
+                console.log("All build files exist, loading Unity...");
+                loadUnity(loaderUrl, canvas, config);
+            } else {
+                throw new Error("Some build files are missing");
+            }
+        })
+        .catch(error => {
+            console.error("Build files error:", error);
+            console.log("Please check GitHub Pages deployment and file paths");
+            
+            // Fallback: try without cache busting
+            console.log("Trying fallback without cache busting...");
+            var fallbackLoaderUrl = buildUrl + "/Tadogami_Build.loader.js";
+            var fallbackConfig = {
+                dataUrl: buildUrl + "/Tadogami_Build.data",
+                frameworkUrl: buildUrl + "/Tadogami_Build.framework.js",
+                codeUrl: buildUrl + "/Tadogami_Build.wasm",
+                streamingAssetsUrl: "StreamingAssets",
+                companyName: "DefaultCompany",
+                productName: "AutoRPGAdventure",
+                productVersion: version,
+                showBanner: unityShowBanner,
+            };
+            loadUnity(fallbackLoaderUrl, canvas, fallbackConfig);
+        });
     }
 
     // Set canvas size to match window dimensions
