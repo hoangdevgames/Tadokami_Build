@@ -338,45 +338,19 @@
         updateBannerVisibility();
     }
 
-    // Enhanced version fetching with cache busting
-    function fetchVersionWithCacheBusting() {
-        const timestamp = Date.now();
-        const random = Math.random();
-        const versionUrl = `version.txt?t=${timestamp}&r=${random}`;
-        
-        console.log("Fetching version with cache busting:", versionUrl);
-        
-        return fetch(versionUrl, {
-            method: 'GET',
-            cache: 'no-cache',
-            headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-            }
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.text();
-            })
-            .then(version => {
-                console.log("Game version fetched successfully:", version);
-                return version;
-            })
-            .catch(error => {
-                console.error("Error fetching version:", error);
-                return "unknown";
-            });
-    }
-
-    // Fetch version and load game
-    fetchVersionWithCacheBusting()
+    // Thêm code fetch version để ngăn chặn caching
+    fetch('version.txt?' + new Date().getTime())
+        .then(response => response.text())
         .then(version => {
+            console.log("Game version fetched:", version);
             // Display version using canvas
             displayVersion(version);
             loadGame(version);
+        })
+        .catch(error => {
+            console.error("Error fetching version:", error);
+            displayVersion("unknown");
+            loadGame("unknown");
         });
 
     function displayVersion(version) {
@@ -415,85 +389,17 @@
     function loadGame(version) {
         console.log("=== LOADING GAME ===", version);
         var buildUrl = "Build";
-        
-        // NUCLEAR OPTION: Force complete reload by changing build path
-        const buildTimestamp = Date.now();
-        const buildRandom = Math.random().toString(36).substring(2, 15);
-        const buildVersion = version.replace(/[^a-zA-Z0-9]/g, '_');
-        
-        // Create unique build path to force browser to reload everything
-        const uniqueBuildPath = `Build_${buildTimestamp}_${buildRandom}_${buildVersion}`;
-        
-        // Enhanced cache busting with multiple parameters
-        const timestamp = Date.now();
-        const random = Math.random();
-        const sessionId = Math.random().toString(36).substring(2, 15);
-        const cacheBuster = `t=${timestamp}&r=${random}&s=${sessionId}&v=${version}&b=${buildTimestamp}`;
-        
-        // Force browser to reload all Unity files with unique parameters
-        const forceReload = `&force=${Date.now()}&unique=${buildRandom}`;
-        
-        var loaderUrl = buildUrl + "/Tadogami_Build.loader.js?" + cacheBuster + forceReload;
+        var loaderUrl = buildUrl + "/Tadogami_Build.loader.js";
         var config = {
-            dataUrl: buildUrl + "/Tadogami_Build.data?" + cacheBuster + forceReload,
-            frameworkUrl: buildUrl + "/Tadogami_Build.framework.js?" + cacheBuster + forceReload,
-            codeUrl: buildUrl + "/Tadogami_Build.wasm?" + cacheBuster + forceReload,
+            dataUrl: buildUrl + "/Tadogami_Build.data?v=" + version,
+            frameworkUrl: buildUrl + "/Tadogami_Build.framework.js?v=" + version,
+            codeUrl: buildUrl + "/Tadogami_Build.wasm?v=" + version,
             streamingAssetsUrl: "StreamingAssets",
             companyName: "DefaultCompany",
             productName: "AutoRPGAdventure",
             productVersion: version,
             showBanner: unityShowBanner,
         };
-
-        console.log("=== NUCLEAR CACHE BUSTING ACTIVATED ===");
-        console.log("Build timestamp:", buildTimestamp);
-        console.log("Build random:", buildRandom);
-        console.log("Build version:", buildVersion);
-        console.log("Unity loader URL:", loaderUrl);
-        console.log("Unity config:", config);
-        console.log("Cache buster parameters:", cacheBuster);
-
-        // Clear any existing Unity instance
-        if (unityInstance) {
-            try {
-                console.log("Destroying existing Unity instance");
-                unityInstance.Quit();
-            } catch (e) {
-                console.log("Unity instance already destroyed");
-            }
-            unityInstance = null;
-            isUnityLoaded = false;
-        }
-
-        // Clear browser cache for Unity files
-        if ('caches' in window) {
-            caches.keys().then(names => {
-                names.forEach(name => {
-                    if (name.includes('Tadogami_Build') || name.includes('unity')) {
-                        console.log("Deleting cache:", name);
-                        caches.delete(name);
-                    }
-                });
-            });
-        }
-
-        // Force browser to reload all Unity files by changing the URL structure
-        const forceReloadUrl = (url) => {
-            const separator = url.includes('?') ? '&' : '?';
-            return url + separator + `nuclear=${Date.now()}&reload=${Math.random()}`;
-        };
-
-        // Apply force reload to all Unity URLs
-        loaderUrl = forceReloadUrl(loaderUrl);
-        config.dataUrl = forceReloadUrl(config.dataUrl);
-        config.frameworkUrl = forceReloadUrl(config.frameworkUrl);
-        config.codeUrl = forceReloadUrl(config.codeUrl);
-
-        console.log("=== FORCE RELOAD URLs ===");
-        console.log("Loader URL:", loaderUrl);
-        console.log("Data URL:", config.dataUrl);
-        console.log("Framework URL:", config.frameworkUrl);
-        console.log("Code URL:", config.codeUrl);
 
         // Ensure version display is visible before loading Unity
         var versionDisplay = document.getElementById('version-display');
@@ -597,43 +503,13 @@
     });
 
     function loadUnity(loaderUrl, canvas, config) {
-        console.log("=== LOADING UNITY WITH NUCLEAR CACHE BUSTING ===");
-        console.log("Loader URL:", loaderUrl);
+        console.log("=== LOADING UNITY ===");
         document.querySelector("#unity-loading-bar").style.display = "block";
 
-        // Clear any existing scripts
-        const existingScripts = document.querySelectorAll('script[src*="Tadogami_Build"]');
-        existingScripts.forEach(script => {
-            console.log("Removing existing Unity script:", script.src);
-            script.remove();
-        });
-
-        // Clear any existing link tags that might cache Unity files
-        const existingLinks = document.querySelectorAll('link[href*="Tadogami_Build"]');
-        existingLinks.forEach(link => {
-            console.log("Removing existing Unity link:", link.href);
-            link.remove();
-        });
-
-        // Force browser to reload by adding a unique script element
         var script = document.createElement("script");
         script.src = loaderUrl;
-        script.type = "text/javascript";
-        
-        // Add cache busting attributes
-        script.setAttribute('data-timestamp', Date.now());
-        script.setAttribute('data-version', config.productVersion);
-        script.setAttribute('data-cache-buster', Math.random().toString(36).substring(2, 15));
-        script.setAttribute('data-nuclear-reload', 'true');
-        
         script.onload = () => {
-            console.log("Unity loader script loaded successfully");
-            console.log("Script attributes:", {
-                timestamp: script.getAttribute('data-timestamp'),
-                version: script.getAttribute('data-version'),
-                cacheBuster: script.getAttribute('data-cache-buster'),
-                nuclearReload: script.getAttribute('data-nuclear-reload')
-            });
+            console.log("Unity loader script loaded");
             
             createUnityInstance(canvas, config, (progress) => {
                 console.log("Loading progress:", progress);
@@ -710,10 +586,6 @@
             }).catch((message) => {
                 console.error("Unity creation error:", message);
             });
-        };
-
-        script.onerror = (error) => {
-            console.error("Failed to load Unity loader script:", error);
         };
 
         document.body.appendChild(script);
