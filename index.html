@@ -484,27 +484,27 @@
                 // Mark Unity as loaded
                 isUnityLoaded = true;
                 
-                // Wait for scene to load and send token
-                setTimeout(() => {
-                    console.log("Attempting to send token after delay");
-                    try {
-                        // Test connection first
-                        instance.SendMessage("__[ST]_WebGLBridge", "TestConnection");
-                        console.log("Test connection successful");
-                        
-                        // Get and send token
-                        const token = getLoginToken();
-                        if (token) {
-                            instance.SendMessage("__[ST]_WebGLBridge", "OnLoginTokenReceived", token);
-                            console.log("Token sent to Unity:", token);
-                        } else {
-                            instance.SendMessage("__[ST]_WebGLBridge", "OnLoginTokenReceived", "");
-                            console.log("No token found in URL, sending default");
-                        }
-                    } catch (error) {
-                        console.error("Error sending message to Unity:", error);
-                    }
-                }, 2000);
+                // REMOVE THIS ENTIRE BLOCK - Let Unity handle token retrieval
+                // setTimeout(() => {
+                //     console.log("Attempting to send token after delay");
+                //     try {
+                //         // Test connection first
+                //         instance.SendMessage("__[ST]_WebGLBridge", "TestConnection");
+                //         console.log("Test connection successful");
+                //         
+                //         // Get and send token
+                //         const token = getLoginToken();
+                //         if (token) {
+                //             instance.SendMessage("__[ST]_WebGLBridge", "OnLoginTokenReceived", token);
+                //             console.log("Token sent to Unity:", token);
+                //         } else {
+                //             instance.SendMessage("__[ST]_WebGLBridge", "OnLoginTokenReceived", "");
+                //             console.log("No token found in URL, sending default");
+                //         }
+                //     } catch (error) {
+                //         console.error("Error sending message to Unity:", error);
+                //     }
+                // }, 2000);
 
             }).catch((message) => {
                 console.error("Unity creation error:", message);
@@ -514,27 +514,27 @@
         document.body.appendChild(script);
     }
 
-    // Synchronous function for Unity to get token
-    function getLoginToken() {
-        console.log("Current URL:", window.location.href);
-        const queryString = window.location.search.substring(1);
-        console.log("Full query string:", queryString);
-        
-        // Return stored LIFF token if available
-        if (liffToken) {
-            console.log("Returning stored LIFF token");
-            return liffToken;
-        }
-        
-        // Return URL query string as fallback
-        if (queryString) {
-            console.log("Returning URL query string as token");
-            return queryString;
-        }
-        
-        console.log("No token available");
-        return null;
-    }
+    // REMOVE THIS FUNCTION - Let LineBridge.jslib handle token retrieval
+    // function getLoginToken() {
+    //     console.log("Current URL:", window.location.href);
+    //     const queryString = window.location.search.substring(1);
+    //     console.log("Full query string:", queryString);
+    //     
+    //     // Return stored LIFF token if available
+    //     if (liffToken) {
+    //         console.log("Returning stored LIFF token");
+    //         return liffToken;
+    //     }
+    //     
+    //     // Return URL query string as fallback
+    //     if (queryString) {
+    //         console.log("Returning URL query string as token");
+    //         return queryString;
+    //     }
+    //     
+    //     console.log("No token available");
+    //     return null;
+    // }
 
     // Add orientation change handler for mobile devices
     window.addEventListener('orientationchange', function() {
