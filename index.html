@@ -6,7 +6,6 @@
     <title>Unity Web Player | AutoRPGAdventure</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-app-compat.js"></script>
     <!-- <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore-compat.js"></script> -->
     <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics-compat.js"></script>
@@ -132,25 +131,51 @@
     // const auth = firebaseApp.auth();
     // const storage = firebaseApp.storage();
     
+    // Load LIFF SDK dynamically
+    function loadLiffSDK() {
+        return new Promise((resolve, reject) => {
+            // Check if LIFF is already loaded
+            if (typeof liff !== 'undefined') {
+                console.log("LIFF SDK already loaded");
+                resolve(liff);
+                return;
+            }
+            
+            console.log("Loading LIFF SDK...");
+            
+            // Create script element
+            const script = document.createElement('script');
+            script.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js';
+            script.async = true;
+            
+            script.onload = () => {
+                console.log("LIFF SDK script loaded");
+                // Wait a bit more for LIFF to be fully initialized
+                setTimeout(() => {
+                    if (typeof liff !== 'undefined') {
+                        console.log("LIFF SDK ready");
+                        resolve(liff);
+                    } else {
+                        reject(new Error("LIFF SDK not available after loading"));
+                    }
+                }, 500);
+            };
+            
+            script.onerror = () => {
+                reject(new Error("Failed to load LIFF SDK"));
+            };
+            
+            document.head.appendChild(script);
+        });
+    }
+    
     // LINE LIFF SDK Initialization
     async function initializeSDK() {
         try {
             console.log("Starting LIFF SDK initialization...");
             
-            // Wait for LIFF to be available (it's loaded via script tag)
-            if (typeof liff === 'undefined') {
-                console.log("LIFF not available yet, waiting...");
-                await new Promise(resolve => {
-                    const checkLiff = () => {
-                        if (typeof liff !== 'undefined') {
-                            resolve();
-                        } else {
-                            setTimeout(checkLiff, 100);
-                        }
-                    };
-                    checkLiff();
-                });
-            }
+            // Load LIFF SDK first
+            const liff = await loadLiffSDK();
             
             console.log("LIFF SDK loaded successfully");
             
@@ -483,7 +508,7 @@
         console.log("Full query string:", queryString);
         
         // Get LIFF access token if available
-        if (liff && isLiffInitialized && liff.isLoggedIn()) {
+        if (typeof liff !== 'undefined' && isLiffInitialized && liff.isLoggedIn()) {
             try {
                 // Try to get ID token first (more secure)
                 return liff.getIDToken().then(idToken => {
@@ -634,7 +659,7 @@
         
         if (isIOS) {
             // Ensure LIFF is ready on iOS
-            if (liff && isLiffInitialized && liff.isLoggedIn()) {
+            if (typeof liff !== 'undefined' && isLiffInitialized && liff.isLoggedIn()) {
                 console.log("LIFF is ready on iOS");
             }
         }
