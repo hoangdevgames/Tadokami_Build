@@ -104,70 +104,7 @@
 <canvas id="version-canvas"></canvas>
 
 <script>
-    // Preserve original console methods before LIFF loads
-    const originalConsole = {
-        log: console.log,
-        warn: console.warn,
-        error: console.error,
-        info: console.info,
-        debug: console.debug
-    };
-    
-    // Enhanced console logging that works with LIFF
-    function enhancedLog(level, ...args) {
-        const timestamp = new Date().toISOString();
-        const message = `[${timestamp}] [${level.toUpperCase()}] ${args.join(' ')}`;
-        
-        // Always use original console methods
-        originalConsole[level].apply(console, args);
-        
-        // Also log to a custom element for debugging
-        const logElement = document.getElementById('debug-log') || createDebugLogElement();
-        if (logElement) {
-            const logEntry = document.createElement('div');
-            logEntry.style.cssText = 'font-size: 10px; color: #fff; margin: 2px 0; font-family: monospace;';
-            logEntry.textContent = message;
-            logElement.appendChild(logEntry);
-            
-            // Keep only last 100 entries
-            while (logElement.children.length > 100) {
-                logElement.removeChild(logElement.firstChild);
-            }
-        }
-    }
-    
-    function createDebugLogElement() {
-        const element = document.createElement('div');
-        element.id = 'debug-log';
-        element.style.cssText = `
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            width: 400px;
-            height: 200px;
-            background: rgba(0,0,0,0.8);
-            color: #fff;
-            font-size: 10px;
-            font-family: monospace;
-            overflow-y: auto;
-            z-index: 9999;
-            padding: 5px;
-            border: 1px solid #333;
-            display: none;
-        `;
-        document.body.appendChild(element);
-        return element;
-    }
-    
-    // Override console methods to ensure they work
-    console.log = (...args) => enhancedLog('log', ...args);
-    console.warn = (...args) => enhancedLog('warn', ...args);
-    console.error = (...args) => enhancedLog('error', ...args);
-    console.info = (...args) => enhancedLog('info', ...args);
-    console.debug = (...args) => enhancedLog('debug', ...args);
-    
-    console.log("=== SCRIPT STARTED ===");
-    console.log("Original console methods preserved");
+    console.log("Script started");
     
     var canvas = document.querySelector("#unity-canvas");
     var unityInstance = null;
@@ -195,11 +132,9 @@
     // const auth = firebaseApp.auth();
     // const storage = firebaseApp.storage();
     
-    // Load LIFF SDK dynamically with better error handling
+    // Load LIFF SDK dynamically
     function loadLiffSDK() {
         return new Promise((resolve, reject) => {
-            console.log("=== LOADING LIFF SDK ===");
-            
             // Check if LIFF is already loaded
             if (typeof liff !== 'undefined') {
                 console.log("LIFF SDK already loaded");
@@ -207,7 +142,7 @@
                 return;
             }
             
-            console.log("Creating LIFF script element...");
+            console.log("Loading LIFF SDK...");
             
             // Create script element
             const script = document.createElement('script');
@@ -215,38 +150,35 @@
             script.async = true;
             
             script.onload = () => {
-                console.log("LIFF SDK script loaded successfully");
+                console.log("LIFF SDK script loaded");
                 // Wait a bit more for LIFF to be fully initialized
                 setTimeout(() => {
                     if (typeof liff !== 'undefined') {
-                        console.log("LIFF SDK ready and available");
+                        console.log("LIFF SDK ready");
                         resolve(liff);
                     } else {
-                        console.error("LIFF SDK not available after loading");
                         reject(new Error("LIFF SDK not available after loading"));
                     }
-                }, 1000); // Increased timeout
+                }, 500);
             };
             
-            script.onerror = (error) => {
-                console.error("Failed to load LIFF SDK script:", error);
+            script.onerror = () => {
                 reject(new Error("Failed to load LIFF SDK"));
             };
             
             document.head.appendChild(script);
-            console.log("LIFF script element added to head");
         });
     }
     
-    // LINE LIFF SDK Initialization with better logging
+    // LINE LIFF SDK Initialization
     async function initializeSDK() {
         try {
-            console.log("=== STARTING LIFF INITIALIZATION ===");
+            console.log("Starting LIFF SDK initialization...");
             
             // Load LIFF SDK first
             const liff = await loadLiffSDK();
             
-            console.log("LIFF SDK loaded successfully, initializing...");
+            console.log("LIFF SDK loaded successfully");
             
             // Initialize LIFF with proper configuration
             await liff.init({ 
@@ -268,18 +200,18 @@
             
             // Get user profile
             const profile = await liff.getProfile();
-            console.log("User profile received:", profile);
+            console.log("User profile:", profile);
             
             // Get ID token for authentication - store it for Unity
             try {
                 liffToken = await liff.getIDToken();
-                console.log("ID Token received and stored successfully");
+                console.log("ID Token received and stored");
             } catch (error) {
                 console.error("Error getting ID token:", error);
                 // Fallback to access token
                 try {
                     liffToken = liff.getAccessToken();
-                    console.log("Access token received and stored as fallback");
+                    console.log("Access token received and stored");
                 } catch (accessError) {
                     console.error("Error getting access token:", accessError);
                 }
@@ -289,37 +221,31 @@
             const urlParams = new URLSearchParams(window.location.search);
             const startParam = urlParams.get('startParam');
             if (startParam) {
-                console.log('Start parameter found:', startParam);
+                console.log('Start parameter:', startParam);
                 const paramsArray = startParam.split('__');
                 for (const param of paramsArray) {
                     if (param.startsWith('invite_')) {
                         const inviteCode = param.split('_')[1];
-                        console.log('Invite Code extracted:', inviteCode);
+                        console.log('Invite Code:', inviteCode);
                     }
                     else if(param.startsWith('fslid_')) {
                         const fslBindingCode = param.split('_')[1];
-                        console.log('FSL Binding Code extracted:', fslBindingCode);
+                        console.log('FSL Binding Code:', fslBindingCode);
                     }
                 }
             }
             
-            console.log("=== LIFF INITIALIZATION COMPLETE ===");
-            
         } catch (error) {
-            console.error("=== LIFF INITIALIZATION FAILED ===", error);
+            console.error("Error initializing LIFF SDK:", error);
             // Fallback: try to continue without LIFF
             console.log("Continuing without LIFF initialization");
         }
     }
     
     // Initialize LIFF when DOM is loaded
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log("=== DOM CONTENT LOADED ===");
-        initializeSDK();
-    });
+    document.addEventListener('DOMContentLoaded', initializeSDK);
     
     function unityShowBanner(msg, type) {
-        console.log("Unity banner:", type, msg);
         var warningBanner = document.querySelector("#unity-warning");
         function updateBannerVisibility() {
             warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
@@ -342,7 +268,7 @@
     fetch('version.txt?' + new Date().getTime())
         .then(response => response.text())
         .then(version => {
-            console.log("Game version fetched:", version);
+            console.log("Game version:", version);
             // Display version using canvas
             displayVersion(version);
             loadGame(version);
@@ -354,7 +280,6 @@
         });
 
     function displayVersion(version) {
-        console.log("Displaying version:", version);
         const canvas = document.getElementById('version-canvas');
         const ctx = canvas.getContext('2d');
         
@@ -387,70 +312,12 @@
     }
 
     function loadGame(version) {
-        console.log("=== LOADING GAME ===", version);
         var buildUrl = "Build";
-        
-        // CORRECTED: Use the correct file names
-        const testUrls = [
-            buildUrl + "/Tadokami_Build.loader.js",  // FIXED: Tadokami not Tadogami
-            buildUrl + "/Tadokami_Build.data",       // FIXED: Tadokami not Tadogami
-            buildUrl + "/Tadokami_Build.framework.js", // FIXED: Tadokami not Tadogami
-            buildUrl + "/Tadokami_Build.wasm"        // FIXED: Tadokami not Tadogami
-        ];
-        
-        console.log("Testing URLs:", testUrls);
-        
-        // Test each URL individually
-        Promise.all(testUrls.map(url => 
-            fetch(url, { method: 'HEAD' })
-                .then(response => ({ url, exists: response.ok }))
-                .catch(error => ({ url, exists: false, error }))
-        ))
-        .then(results => {
-            console.log("=== URL TEST RESULTS ===");
-            results.forEach(result => {
-                console.log(`${result.url}: ${result.exists ? 'EXISTS' : 'NOT FOUND'}`);
-                if (result.error) {
-                    console.error(`Error for ${result.url}:`, result.error);
-                }
-            });
-            
-            // If all files exist, proceed with normal loading
-            const allExist = results.every(r => r.exists);
-            if (allExist) {
-                console.log("All files exist, loading Unity...");
-                loadUnityWithCacheBusting(version);
-            } else {
-                console.error("Some files are missing, cannot load Unity");
-                // Show error message to user
-                document.querySelector("#unity-warning").innerHTML = 
-                    '<div style="background: red; padding: 10px; color: white;">' +
-                    'Unity build files not found. Please check GitHub Pages deployment.' +
-                    '<br><br>Missing files:<br>' +
-                    results.filter(r => !r.exists).map(r => r.url).join('<br>') +
-                    '</div>';
-            }
-        });
-    }
-    
-    function loadUnityWithCacheBusting(version) {
-        var buildUrl = "Build";
-        
-        // Enhanced cache busting with multiple parameters
-        const timestamp = Date.now();
-        const random = Math.random();
-        const sessionId = Math.random().toString(36).substring(2, 15);
-        const cacheBuster = `t=${timestamp}&r=${random}&s=${sessionId}&v=${version}`;
-        
-        // Force browser to reload all Unity files with unique parameters
-        const forceReload = `&force=${Date.now()}&unique=${Math.random().toString(36).substring(2, 15)}`;
-        
-        // CORRECTED: Use the correct file names
-        var loaderUrl = buildUrl + "/Tadokami_Build.loader.js?" + cacheBuster + forceReload;  // FIXED
+        var loaderUrl = buildUrl + "/Tadokami_Build.loader.js";
         var config = {
-            dataUrl: buildUrl + "/Tadokami_Build.data?" + cacheBuster + forceReload,           // FIXED
-            frameworkUrl: buildUrl + "/Tadokami_Build.framework.js?" + cacheBuster + forceReload, // FIXED
-            codeUrl: buildUrl + "/Tadokami_Build.wasm?" + cacheBuster + forceReload,           // FIXED
+            dataUrl: buildUrl + "/Tadokami_Build.data?v=" + version,
+            frameworkUrl: buildUrl + "/Tadokami_Build.framework.js?v=" + version,
+            codeUrl: buildUrl + "/Tadokami_Build.wasm?v=" + version,
             streamingAssetsUrl: "StreamingAssets",
             companyName: "DefaultCompany",
             productName: "AutoRPGAdventure",
@@ -458,11 +325,12 @@
             showBanner: unityShowBanner,
         };
 
-        console.log("=== LOADING UNITY WITH CACHE BUSTING ===");
-        console.log("Loader URL:", loaderUrl);
-        console.log("Data URL:", config.dataUrl);
-        console.log("Framework URL:", config.frameworkUrl);
-        console.log("Code URL:", config.codeUrl);
+        // Ensure version display is visible before loading Unity
+        var versionDisplay = document.getElementById('version-display');
+        if (versionDisplay) {
+            versionDisplay.style.display = 'block';
+            versionDisplay.style.visibility = 'visible';
+        }
 
         loadUnity(loaderUrl, canvas, config);
     }
@@ -559,7 +427,6 @@
     });
 
     function loadUnity(loaderUrl, canvas, config) {
-        console.log("=== LOADING UNITY ===");
         document.querySelector("#unity-loading-bar").style.display = "block";
 
         var script = document.createElement("script");
@@ -571,7 +438,7 @@
                 console.log("Loading progress:", progress);
                 document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
             }).then((instance) => {
-                console.log("Unity instance created successfully");
+                console.log("Unity instance created");
                 unityInstance = instance;
                 
                 document.querySelector("#unity-loading-bar").style.display = "none";
@@ -619,7 +486,7 @@
                 
                 // Wait for scene to load and send token
                 setTimeout(() => {
-                    console.log("=== SENDING TOKEN TO UNITY ===");
+                    console.log("Attempting to send token after delay");
                     try {
                         // Test connection first
                         instance.SendMessage("__[ST]_WebGLBridge", "TestConnection");
@@ -649,7 +516,6 @@
 
     // Synchronous function for Unity to get token
     function getLoginToken() {
-        console.log("=== GETTING LOGIN TOKEN ===");
         console.log("Current URL:", window.location.href);
         const queryString = window.location.search.substring(1);
         console.log("Full query string:", queryString);
@@ -802,23 +668,6 @@
             }
         }
     }
-    
-    // Add debug toggle for console visibility
-    window.toggleDebugLog = function() {
-        const logElement = document.getElementById('debug-log');
-        if (logElement) {
-            logElement.style.display = logElement.style.display === 'none' ? 'block' : 'none';
-        }
-    };
-    
-    // Add keyboard shortcut to toggle debug log (Ctrl+Shift+D)
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-            window.toggleDebugLog();
-        }
-    });
-    
-    console.log("=== SCRIPT INITIALIZATION COMPLETE ===");
 </script>
 </body>
 </html>
