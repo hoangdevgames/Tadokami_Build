@@ -346,7 +346,15 @@
         
         console.log("Fetching version with cache busting:", versionUrl);
         
-        return fetch(versionUrl)
+        return fetch(versionUrl, {
+            method: 'GET',
+            cache: 'no-cache',
+            headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        })
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -408,16 +416,20 @@
         console.log("=== LOADING GAME ===", version);
         var buildUrl = "Build";
         
-        // Add cache busting parameters to all Unity files
+        // Enhanced cache busting with multiple parameters
         const timestamp = Date.now();
         const random = Math.random();
-        const cacheBuster = `t=${timestamp}&r=${random}&v=${version}`;
+        const sessionId = Math.random().toString(36).substring(2, 15);
+        const cacheBuster = `t=${timestamp}&r=${random}&s=${sessionId}&v=${version}`;
         
-        var loaderUrl = buildUrl + "/Tadogami_Build.loader.js?" + cacheBuster;
+        // Force browser to reload all Unity files
+        const forceReload = `&force=${Date.now()}`;
+        
+        var loaderUrl = buildUrl + "/Tadogami_Build.loader.js?" + cacheBuster + forceReload;
         var config = {
-            dataUrl: buildUrl + "/Tadogami_Build.data?" + cacheBuster,
-            frameworkUrl: buildUrl + "/Tadogami_Build.framework.js?" + cacheBuster,
-            codeUrl: buildUrl + "/Tadogami_Build.wasm?" + cacheBuster,
+            dataUrl: buildUrl + "/Tadogami_Build.data?" + cacheBuster + forceReload,
+            frameworkUrl: buildUrl + "/Tadogami_Build.framework.js?" + cacheBuster + forceReload,
+            codeUrl: buildUrl + "/Tadogami_Build.wasm?" + cacheBuster + forceReload,
             streamingAssetsUrl: "StreamingAssets",
             companyName: "DefaultCompany",
             productName: "AutoRPGAdventure",
@@ -427,6 +439,18 @@
 
         console.log("Unity loader URL:", loaderUrl);
         console.log("Unity config:", config);
+        console.log("Cache buster parameters:", cacheBuster);
+
+        // Clear any existing Unity instance
+        if (unityInstance) {
+            try {
+                unityInstance.Quit();
+            } catch (e) {
+                console.log("Unity instance already destroyed");
+            }
+            unityInstance = null;
+            isUnityLoaded = false;
+        }
 
         // Ensure version display is visible before loading Unity
         var versionDisplay = document.getElementById('version-display');
@@ -534,10 +558,27 @@
         console.log("Loader URL:", loaderUrl);
         document.querySelector("#unity-loading-bar").style.display = "block";
 
+        // Clear any existing scripts
+        const existingScripts = document.querySelectorAll('script[src*="Tadogami_Build"]');
+        existingScripts.forEach(script => {
+            console.log("Removing existing Unity script:", script.src);
+            script.remove();
+        });
+
         var script = document.createElement("script");
         script.src = loaderUrl;
+        script.type = "text/javascript";
+        
+        // Add cache busting attributes
+        script.setAttribute('data-timestamp', Date.now());
+        script.setAttribute('data-version', config.productVersion);
+        
         script.onload = () => {
             console.log("Unity loader script loaded successfully");
+            console.log("Script attributes:", {
+                timestamp: script.getAttribute('data-timestamp'),
+                version: script.getAttribute('data-version')
+            });
             
             createUnityInstance(canvas, config, (progress) => {
                 console.log("Loading progress:", progress);
