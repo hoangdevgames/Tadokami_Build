@@ -338,19 +338,37 @@
         updateBannerVisibility();
     }
 
-    // Thêm code fetch version để ngăn chặn caching
-    fetch('version.txt?' + new Date().getTime())
-        .then(response => response.text())
+    // Enhanced version fetching with cache busting
+    function fetchVersionWithCacheBusting() {
+        const timestamp = Date.now();
+        const random = Math.random();
+        const versionUrl = `version.txt?t=${timestamp}&r=${random}`;
+        
+        console.log("Fetching version with cache busting:", versionUrl);
+        
+        return fetch(versionUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(version => {
+                console.log("Game version fetched successfully:", version);
+                return version;
+            })
+            .catch(error => {
+                console.error("Error fetching version:", error);
+                return "unknown";
+            });
+    }
+
+    // Fetch version and load game
+    fetchVersionWithCacheBusting()
         .then(version => {
-            console.log("Game version fetched:", version);
             // Display version using canvas
             displayVersion(version);
             loadGame(version);
-        })
-        .catch(error => {
-            console.error("Error fetching version:", error);
-            displayVersion("unknown");
-            loadGame("unknown");
         });
 
     function displayVersion(version) {
@@ -389,17 +407,26 @@
     function loadGame(version) {
         console.log("=== LOADING GAME ===", version);
         var buildUrl = "Build";
-        var loaderUrl = buildUrl + "/Tadogami_Build.loader.js";
+        
+        // Add cache busting parameters to all Unity files
+        const timestamp = Date.now();
+        const random = Math.random();
+        const cacheBuster = `t=${timestamp}&r=${random}&v=${version}`;
+        
+        var loaderUrl = buildUrl + "/Tadogami_Build.loader.js?" + cacheBuster;
         var config = {
-            dataUrl: buildUrl + "/Tadogami_Build.data?v=" + version,
-            frameworkUrl: buildUrl + "/Tadogami_Build.framework.js?v=" + version,
-            codeUrl: buildUrl + "/Tadogami_Build.wasm?v=" + version,
+            dataUrl: buildUrl + "/Tadogami_Build.data?" + cacheBuster,
+            frameworkUrl: buildUrl + "/Tadogami_Build.framework.js?" + cacheBuster,
+            codeUrl: buildUrl + "/Tadogami_Build.wasm?" + cacheBuster,
             streamingAssetsUrl: "StreamingAssets",
             companyName: "DefaultCompany",
             productName: "AutoRPGAdventure",
             productVersion: version,
             showBanner: unityShowBanner,
         };
+
+        console.log("Unity loader URL:", loaderUrl);
+        console.log("Unity config:", config);
 
         // Ensure version display is visible before loading Unity
         var versionDisplay = document.getElementById('version-display');
@@ -504,12 +531,13 @@
 
     function loadUnity(loaderUrl, canvas, config) {
         console.log("=== LOADING UNITY ===");
+        console.log("Loader URL:", loaderUrl);
         document.querySelector("#unity-loading-bar").style.display = "block";
 
         var script = document.createElement("script");
         script.src = loaderUrl;
         script.onload = () => {
-            console.log("Unity loader script loaded");
+            console.log("Unity loader script loaded successfully");
             
             createUnityInstance(canvas, config, (progress) => {
                 console.log("Loading progress:", progress);
@@ -586,6 +614,10 @@
             }).catch((message) => {
                 console.error("Unity creation error:", message);
             });
+        };
+
+        script.onerror = (error) => {
+            console.error("Failed to load Unity loader script:", error);
         };
 
         document.body.appendChild(script);
