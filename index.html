@@ -416,14 +416,22 @@
         console.log("=== LOADING GAME ===", version);
         var buildUrl = "Build";
         
+        // NUCLEAR OPTION: Force complete reload by changing build path
+        const buildTimestamp = Date.now();
+        const buildRandom = Math.random().toString(36).substring(2, 15);
+        const buildVersion = version.replace(/[^a-zA-Z0-9]/g, '_');
+        
+        // Create unique build path to force browser to reload everything
+        const uniqueBuildPath = `Build_${buildTimestamp}_${buildRandom}_${buildVersion}`;
+        
         // Enhanced cache busting with multiple parameters
         const timestamp = Date.now();
         const random = Math.random();
         const sessionId = Math.random().toString(36).substring(2, 15);
-        const cacheBuster = `t=${timestamp}&r=${random}&s=${sessionId}&v=${version}`;
+        const cacheBuster = `t=${timestamp}&r=${random}&s=${sessionId}&v=${version}&b=${buildTimestamp}`;
         
-        // Force browser to reload all Unity files
-        const forceReload = `&force=${Date.now()}`;
+        // Force browser to reload all Unity files with unique parameters
+        const forceReload = `&force=${Date.now()}&unique=${buildRandom}`;
         
         var loaderUrl = buildUrl + "/Tadogami_Build.loader.js?" + cacheBuster + forceReload;
         var config = {
@@ -437,6 +445,10 @@
             showBanner: unityShowBanner,
         };
 
+        console.log("=== NUCLEAR CACHE BUSTING ACTIVATED ===");
+        console.log("Build timestamp:", buildTimestamp);
+        console.log("Build random:", buildRandom);
+        console.log("Build version:", buildVersion);
         console.log("Unity loader URL:", loaderUrl);
         console.log("Unity config:", config);
         console.log("Cache buster parameters:", cacheBuster);
@@ -444,12 +456,25 @@
         // Clear any existing Unity instance
         if (unityInstance) {
             try {
+                console.log("Destroying existing Unity instance");
                 unityInstance.Quit();
             } catch (e) {
                 console.log("Unity instance already destroyed");
             }
             unityInstance = null;
             isUnityLoaded = false;
+        }
+
+        // Clear browser cache for Unity files
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => {
+                    if (name.includes('Tadogami_Build') || name.includes('unity')) {
+                        console.log("Deleting cache:", name);
+                        caches.delete(name);
+                    }
+                });
+            });
         }
 
         // Ensure version display is visible before loading Unity
@@ -554,7 +579,7 @@
     });
 
     function loadUnity(loaderUrl, canvas, config) {
-        console.log("=== LOADING UNITY ===");
+        console.log("=== LOADING UNITY WITH NUCLEAR CACHE BUSTING ===");
         console.log("Loader URL:", loaderUrl);
         document.querySelector("#unity-loading-bar").style.display = "block";
 
@@ -565,6 +590,13 @@
             script.remove();
         });
 
+        // Clear any existing link tags that might cache Unity files
+        const existingLinks = document.querySelectorAll('link[href*="Tadogami_Build"]');
+        existingLinks.forEach(link => {
+            console.log("Removing existing Unity link:", link.href);
+            link.remove();
+        });
+
         var script = document.createElement("script");
         script.src = loaderUrl;
         script.type = "text/javascript";
@@ -572,12 +604,14 @@
         // Add cache busting attributes
         script.setAttribute('data-timestamp', Date.now());
         script.setAttribute('data-version', config.productVersion);
+        script.setAttribute('data-cache-buster', Math.random().toString(36).substring(2, 15));
         
         script.onload = () => {
             console.log("Unity loader script loaded successfully");
             console.log("Script attributes:", {
                 timestamp: script.getAttribute('data-timestamp'),
-                version: script.getAttribute('data-version')
+                version: script.getAttribute('data-version'),
+                cacheBuster: script.getAttribute('data-cache-buster')
             });
             
             createUnityInstance(canvas, config, (progress) => {
