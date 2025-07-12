@@ -6,6 +6,7 @@
     <title>Unity Web Player | AutoRPGAdventure</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-app-compat.js"></script>
     <!-- <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore-compat.js"></script> -->
     <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics-compat.js"></script>
@@ -109,7 +110,6 @@
     var canvas = document.querySelector("#unity-canvas");
     var unityInstance = null;
     var isUnityLoaded = false;
-    var liff = null;
     var isLiffInitialized = false;
 
     // Initialize Firebase
@@ -132,12 +132,25 @@
     // const auth = firebaseApp.auth();
     // const storage = firebaseApp.storage();
     
-    // LINE LIFF SDK Initialization - Using dynamic import like GamingHub
+    // LINE LIFF SDK Initialization
     async function initializeSDK() {
         try {
-            // Dynamic import of LIFF SDK
-            const liffModule = await import('https://static.line-scdn.net/liff/edge/2/sdk.js');
-            liff = liffModule.default;
+            console.log("Starting LIFF SDK initialization...");
+            
+            // Wait for LIFF to be available (it's loaded via script tag)
+            if (typeof liff === 'undefined') {
+                console.log("LIFF not available yet, waiting...");
+                await new Promise(resolve => {
+                    const checkLiff = () => {
+                        if (typeof liff !== 'undefined') {
+                            resolve();
+                        } else {
+                            setTimeout(checkLiff, 100);
+                        }
+                    };
+                    checkLiff();
+                });
+            }
             
             console.log("LIFF SDK loaded successfully");
             
@@ -473,7 +486,7 @@
         if (liff && isLiffInitialized && liff.isLoggedIn()) {
             try {
                 // Try to get ID token first (more secure)
-                liff.getIDToken().then(idToken => {
+                return liff.getIDToken().then(idToken => {
                     console.log("LIFF ID token available");
                     return idToken;
                 }).catch(error => {
