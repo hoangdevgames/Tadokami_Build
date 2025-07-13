@@ -9,6 +9,9 @@
     <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-app-compat.js"></script>
     <!-- <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore-compat.js"></script> -->
     <script src="https://www.gstatic.com/firebasejs/11.2.0/firebase-analytics-compat.js"></script>
+    
+    <!-- Load config trước khi load LIFF -->
+    <script src="config.js"></script>
 
     <style>
         /* Reset all margins and paddings */
@@ -106,22 +109,19 @@
 <script>
     console.log("Script started");
     
+    // Kiểm tra config đã được load chưa
+    if (!window.GameConfig) {
+        console.error("GameConfig not found! Make sure config.js is loaded before this script.");
+    }
+    
     var canvas = document.querySelector("#unity-canvas");
     var unityInstance = null;
     var isUnityLoaded = false;
     var isLiffInitialized = false;
     var liffToken = null; // Store token for Unity
 
-    // Initialize Firebase
-    const firebaseConfig = {
-        apiKey: "AIzaSyBlmSTnWXmJ7AM62x6GrXS6JOQTyC8agDM",
-        authDomain: "tadogami-7f67a.firebaseapp.com",
-        projectId: "tadogami-7f67a",
-        storageBucket: "tadogami-7f67a.firebasestorage.app",
-        messagingSenderId: "498552618046",
-        appId: "1:498552618046:web:a6289460f773df389d256f",
-        measurementId: "G-Y3KSRPFPBM"
-    };
+    // Initialize Firebase - sử dụng config từ file riêng
+    const firebaseConfig = window.GameConfig.firebase;
     
     // Initialize Firebase app and services
     const firebaseApp = firebase.initializeApp(firebaseConfig);
@@ -180,10 +180,10 @@
             
             console.log("LIFF SDK loaded successfully");
             
-            // Initialize LIFF with proper configuration
+            // Initialize LIFF with proper configuration - sử dụng config từ file riêng
             await liff.init({ 
-                liffId: "2007488153-aBQgjwyL",
-                withLoginOnExternalBrowser: true
+                liffId: window.GameConfig.liff.liffId,
+                withLoginOnExternalBrowser: window.GameConfig.liff.withLoginOnExternalBrowser
             });
             
             console.log("LIFF SDK initialized successfully");
@@ -319,8 +319,8 @@
             frameworkUrl: buildUrl + "/Tadokami_Build.framework.js?v=" + version,
             codeUrl: buildUrl + "/Tadokami_Build.wasm?v=" + version,
             streamingAssetsUrl: "StreamingAssets",
-            companyName: "DefaultCompany",
-            productName: "AutoRPGAdventure",
+            companyName: window.GameConfig.game.companyName,
+            productName: window.GameConfig.game.productName,
             productVersion: version,
             showBanner: unityShowBanner,
         };
