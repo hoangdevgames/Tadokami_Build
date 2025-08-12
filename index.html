@@ -111,7 +111,7 @@
     
     // Kiểm tra config đã được load chưa
     if (!window.GameConfig) {
-        console.error("GameConfig not found!! Make sure config.js is loaded before this script.");
+        console.error("GameConfig not found! Make sure config.js is loaded before this script.");
     }
     
     var canvas = document.querySelector("#unity-canvas");
@@ -315,10 +315,9 @@
                         const treasureHuntTaskId = param.split('_')[1];
                         console.log('Treasure Hunt Task ID:', treasureHuntTaskId);
                         
-                        // Khi có đủ cả taskID và treasureHuntTaskId, gửi data cho Unity
-                        if (window.currentTaskId && window.currentRedirectUrl) {
+                        // Gửi data cho Unity khi có đủ redirectUrl và treasureHuntTaskId
+                        if (window.currentRedirectUrl) {
                             const treasureHuntData = {
-                                taskId: parseInt(window.currentTaskId),           // ID của task type 4 (Play Tadokami)
                                 redirectUrl: window.currentRedirectUrl,           // URL để redirect
                                 treasureHuntTaskId: parseInt(treasureHuntTaskId)  // ID của task type 7 (Treasure Hunt)
                             };
@@ -326,10 +325,9 @@
                             console.log("Complete treasure hunt data sent to ExternalTaskManager:", treasureHuntData);
                             
                             // Clean up
-                            delete window.currentTaskId;
                             delete window.currentRedirectUrl;
                         } else {
-                            console.log("Missing required data - taskId:", window.currentTaskId, "redirectUrl:", window.currentRedirectUrl);
+                            console.log("Missing redirectUrl for treasure hunt task");
                         }
                     }
                     else {
