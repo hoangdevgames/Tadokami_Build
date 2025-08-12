@@ -176,7 +176,7 @@
             try {
                 // Xác định receiver object dựa trên dataType
                 let receiverObject;
-                if (dataType === "OnTaskReceived") {
+                if (dataType === "OnTaskReceived" || dataType === "OnTreasureHuntDataReceived") {
                     receiverObject = "__[ST]_ExternalTaskManager";
                 } else {
                     // Các message khác gửi cho WebGLBridge
