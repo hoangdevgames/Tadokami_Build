@@ -308,33 +308,28 @@
                     else if (param.startsWith('redirectUrl_')) {
                         const redirectUrl = decodeURIComponent(param.split('_')[1]);
                         console.log('Redirect URL:', redirectUrl);
-                        
-                        if (window.currentTaskId) {
-                            const treasureHuntData = {
-                                taskId: parseInt(window.currentTaskId),
-                                redirectUrl: redirectUrl
-                            };
-                            sendDataToUnity("OnTreasureHuntDataReceived", JSON.stringify(treasureHuntData));
-                            console.log("Treasure hunt data sent to ExternalTaskManager:", treasureHuntData);
-                            delete window.currentTaskId;
-                        } else {
-                            console.log("Missing taskId for redirectUrl:", redirectUrl);
-                        }
+                        // Lưu redirectUrl để sử dụng sau
+                        window.currentRedirectUrl = redirectUrl;
                     }
                     else if (param.startsWith('treasureHuntTaskId_')) {
                         const treasureHuntTaskId = param.split('_')[1];
                         console.log('Treasure Hunt Task ID:', treasureHuntTaskId);
                         
-                        if (window.currentTaskId) {
+                        // Khi có đủ cả taskID và treasureHuntTaskId, gửi data cho Unity
+                        if (window.currentTaskId && window.currentRedirectUrl) {
                             const treasureHuntData = {
-                                taskId: parseInt(window.currentTaskId),
-                                treasureHuntTaskId: parseInt(treasureHuntTaskId)
+                                taskId: parseInt(window.currentTaskId),           // ID của task type 4 (Play Tadokami)
+                                redirectUrl: window.currentRedirectUrl,           // URL để redirect
+                                treasureHuntTaskId: parseInt(treasureHuntTaskId)  // ID của task type 7 (Treasure Hunt)
                             };
                             sendDataToUnity("OnTreasureHuntDataReceived", JSON.stringify(treasureHuntData));
-                            console.log("Treasure hunt data with taskId sent to ExternalTaskManager:", treasureHuntData);
+                            console.log("Complete treasure hunt data sent to ExternalTaskManager:", treasureHuntData);
+                            
+                            // Clean up
                             delete window.currentTaskId;
+                            delete window.currentRedirectUrl;
                         } else {
-                            console.log("Missing taskId for treasureHuntTaskId:", treasureHuntTaskId);
+                            console.log("Missing required data - taskId:", window.currentTaskId, "redirectUrl:", window.currentRedirectUrl);
                         }
                     }
                     else {
