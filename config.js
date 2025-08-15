@@ -10,17 +10,17 @@
 // Để thay đổi config, chỉ cần sửa file này và không cần rebuild Unity
 window.GameConfig = {
     liff: {
-        liffId: "2007739330-o6yN0LLG",
+        liffId: "2007739328-AXQNennQ",
         withLoginOnExternalBrowser: true
     },
     firebase: {
-        apiKey: "AIzaSyBTC3MPiDICYYAO8bTbZ0c_44yPoJjFjq8",
-        authDomain: "tadokami-line.firebaseapp.com",
-        projectId: "tadokami-line",
-        storageBucket: "tadokami-line.firebasestorage.app",
-        messagingSenderId: "812391039700",
-        appId: "1:812391039700:web:fb766775fa0a1618b67141",
-        measurementId: "G-KNHWS1NYET"
+        apiKey: "AIzaSyBlmSTnWXmJ7AM62x6GrXS6JOQTyC8agDM",
+        authDomain: "tadogami-7f67a.firebaseapp.com",
+        projectId: "tadogami-7f67a",
+        storageBucket: "tadogami-7f67a.firebasestorage.app",
+        messagingSenderId: "498552618046",
+        appId: "1:498552618046:web:a6289460f773df389d256f",
+        measurementId: "G-Y3KSRPFPBM"
     },
     game: {
         productName: "AutoRPGAdventure",
